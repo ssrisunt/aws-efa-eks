@@ -51,7 +51,7 @@ spec:
                       - p3dn.24xlarge
                       - r5dn.24xlarge
                       - r5n.24xlarge
-                      - p4d.24xlarge
+                      - g4dn.12xlarge
                       - hpc6a.48xlarge
                       - dl1.24xlarge
                       - g5.48xlarge
@@ -74,7 +74,7 @@ spec:
                       - p3dn.24xlarge
                       - r5dn.24xlarge
                       - r5n.24xlarge
-                      - p4d.24xlarge
+                      - g4dn.12xlarge
                       - hpc6a.48xlarge
                       - dl1.24xlarge
                       - g5.48xlarge

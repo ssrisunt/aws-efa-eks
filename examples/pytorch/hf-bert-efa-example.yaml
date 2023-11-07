@@ -26,7 +26,7 @@ spec:
             name: hf-bert-efa-pretraining
             env:
              - name: GPUS_PER_NODE
-               value: "8"
+               value: "4"
              - name: MASTER_ADDR
                value: hf-bert-efa-32-worker-0.hf-bert-efa-32-worker
              - name: MASTER_PORT
@@ -93,7 +93,7 @@ spec:
             persistentVolumeClaim:
               claimName: fsx-claim
           nodeSelector:
-            beta.kubernetes.io/instance-type: p4d.24xlarge
+            beta.kubernetes.io/instance-type: g4dn.12xlarge
           containers:
           - image: 231748552833.dkr.ecr.us-east-1.amazonaws.com/aws/bert-pt-py3:hf-latest
             imagePullPolicy: Always

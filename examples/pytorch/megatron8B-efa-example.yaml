@@ -30,7 +30,7 @@ spec:
              - name: MERGES_FILE
                value: /fsx/gpt2-pytorch/gpt2/gpt2-merges.txt
              - name: GPUS_PER_NODE
-               value: "8"
+               value: "4"
              - name: MASTER_ADDR
                value: megatron-8b-pretraining-efa-worker-0
              - name: MASTER_PORT
@@ -80,7 +80,7 @@ spec:
       template:
         spec:
           nodeSelector:
-            beta.kubernetes.io/instance-type: p4d.24xlarge
+            beta.kubernetes.io/instance-type: g4dn.12xlarge
           volumes:
           - name: dshm
             emptyDir: 

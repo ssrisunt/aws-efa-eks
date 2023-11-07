@@ -13,7 +13,7 @@ This document is assuming user has basic knowledge on [Kubernetes](https://kuber
 
 ## Abstract
 
-This document will introduce the user to create an EKS cluster with `p4d.24xlarge` backed nodegroup with EFA and GPUDirect RDMA, to run an example NCCL-Test for Multi-node NCCL Performance via EFA. This workflow will also provide a template for distributed deep learning training on EKS using EFA.
+This document will introduce the user to create an EKS cluster with `g4dn.12xlarge` backed nodegroup with EFA and GPUDirect RDMA, to run an example NCCL-Test for Multi-node NCCL Performance via EFA. This workflow will also provide a template for distributed deep learning training on EKS using EFA.
 
 
 ## Step 1: Create EKS cluster
@@ -33,7 +33,7 @@ In AWS CloudFormation Console upload the cloudformation script in [cloudformatio
 - In `NodeImageIdSSMParam`, ensure it is using Amazon EKS-optimized accelerated AMI: `/aws/service/eks/optimized-ami/1.19/amazon-linux-2-gpu/recommended/image_id`.
 - In `Subnetid`, it is recommended to put in a private subnet. To select a subnet where p4d instances are available in a region you can run this comman:
 ```
-aws ec2 describe-instance-type-offerings --location-type availability-zone --filters Name=instance-type,Values=p4d.24xlarge --region <region>
+aws ec2 describe-instance-type-offerings --location-type availability-zone --filters Name=instance-type,Values=g4dn.12xlarge --region <region>
 ```
 
 When the cloud formation is in `CREATE COMPLETE` continue to Step 3.

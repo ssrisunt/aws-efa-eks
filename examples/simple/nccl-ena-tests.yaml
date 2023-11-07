@@ -54,7 +54,7 @@ spec:
             - --oversubscribe
             - /tmp/nccl-tests/build/all_reduce_perf
             - -b
-            - "8"
+            - "4"
             - -e
             - 1G
             - -f

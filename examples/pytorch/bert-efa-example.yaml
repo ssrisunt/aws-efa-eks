@@ -21,7 +21,7 @@ spec:
             name: bert-efa-pretraining
             env:
              - name: GPUS_PER_NODE
-               value: "8"
+               value: "4"
              - name: MASTER_ADDR
                value: bert-efa-32-worker-0
              - name: MASTER_PORT

@@ -17,7 +17,7 @@ spec:
             name: megatron-training-launcher
             env:
              - name: GPUS_PER_NODE
-               value: "8"
+               value: "4"
              - name: MASTER_ADDR
                value: pytorch-ddp-efa-worker-0
              - name: MASTER_PORT

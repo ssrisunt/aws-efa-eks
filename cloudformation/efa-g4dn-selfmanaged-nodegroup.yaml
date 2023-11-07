@@ -14,6 +14,9 @@ Metadata:
           default: Worker Node Configuration
         Parameters:
           - NodeGroupName
+          - NodeAutoScalingGroupMinSize
+          - NodeAutoScalingGroupDesiredCapacity
+          - NodeAutoScalingGroupMaxSize
           - NodeInstanceType
           - NodeImageIdSSMParam
           - NodeImageId
@@ -42,11 +45,26 @@ Parameters:
 
   SubnetId:
     Type: "AWS::EC2::Subnet::Id"
-    Description: Subnet ID to launch instances into. This must be a private subnet
+    Description: Subnet ID to launch instances into.
 
   KeyName:
     Type: "AWS::EC2::KeyPair::KeyName"
     Description: The EC2 Key Pair to allow SSH access to the instances
+
+  NodeAutoScalingGroupDesiredCapacity:
+    Type: Number
+    Default: 1
+    Description: Desired capacity of Node Group ASG.
+
+  NodeAutoScalingGroupMaxSize:
+    Type: Number
+    Default: 4
+    Description: Maximum size of Node Group ASG. Set to at least 1 greater than NodeAutoScalingGroupDesiredCapacity.
+
+  NodeAutoScalingGroupMinSize:
+    Type: Number
+    Default: 0
+    Description: Minimum size of Node Group ASG.
 
   NodeGroupName:
     Type: String
@@ -64,9 +82,9 @@ Parameters:
 
   NodeInstanceType:
     Type: String
-    Default: p4d.24xlarge
+    Default: g4dn.12xlarge
     AllowedValues:
-      - p4d.24xlarge
+      - g4dn.12xlarge
     ConstraintDescription: Must be a valid EC2 instance type
     Description: EC2 instance type for the node instances
 
@@ -99,12 +117,11 @@ Conditions:
         - ""
 
 Resources:
-
   PlacementGroup:
    Type: AWS::EC2::PlacementGroup
    Properties:
      Strategy: cluster
-  
+
   NodeInstanceRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -269,18 +286,15 @@ Resources:
             Ebs:
               DeleteOnTermination: true
               VolumeSize: !Ref NodeVolumeSize
-              VolumeType: gp3
+              VolumeType: gp2
+        IamInstanceProfile:
+          Arn: !GetAtt NodeInstanceProfile.Arn
         ImageId: !If
           - HasNodeImageId
           - Ref: NodeImageId
           - Ref: NodeImageIdSSMParam
         InstanceType: !Ref NodeInstanceType
         KeyName: !Ref KeyName
-        TagSpecifications:
-          - ResourceType: instance
-            Tags:
-              - Key: Name
-                Value: !Sub ${ClusterName}-${NodeGroupName}
         NetworkInterfaces:
           - Description: NetworkInterfaces Configuration For EFA and EKS
             NetworkCardIndex: 0
@@ -289,6 +303,7 @@ Resources:
             Groups:
               - !Ref NodeSecurityGroup
             InterfaceType: efa
+            SubnetId: !Ref SubnetId
           - Description: NetworkInterfaces Configuration For EFA and EKS
             NetworkCardIndex: 1
             DeviceIndex: 1
@@ -296,6 +311,7 @@ Resources:
             Groups:
               - !Ref NodeSecurityGroup
             InterfaceType: efa
+            SubnetId: !Ref SubnetId
           - Description: NetworkInterfaces Configuration For EFA and EKS
             NetworkCardIndex: 2
             DeviceIndex: 2
@@ -303,6 +319,7 @@ Resources:
             Groups:
               - !Ref NodeSecurityGroup
             InterfaceType: efa
+            SubnetId: !Ref SubnetId
           - Description: NetworkInterfaces Configuration For EFA and EKS
             NetworkCardIndex: 3
             DeviceIndex: 3
@@ -310,6 +327,7 @@ Resources:
             Groups:
               - !Ref NodeSecurityGroup
             InterfaceType: efa
+            SubnetId: !Ref SubnetId
         Placement:
           GroupName: !Ref PlacementGroup
         UserData: !Base64
@@ -328,38 +346,50 @@ Resources:
             pop /tmp/aws-efa-installer
 
             cloud-init-per once efa_info /opt/amazon/efa/bin/fi_info -p efa
-
+            
             --==BOUNDARY==
             Content-Type: text/x-shellscript; charset="us-ascii"
 
             #!/bin/bash
             set -o xtrace
             /etc/eks/bootstrap.sh ${ClusterName} ${BootstrapArguments}
+            /opt/aws/bin/cfn-signal --exit-code $? \
+                     --stack  ${AWS::StackName} \
+                     --resource NodeGroup  \
+                     --region ${AWS::Region}
             --==BOUNDARY==--
 
         MetadataOptions:
           "HttpPutResponseHopLimit": 2
 
+  NodeGroup:
+    Type: "AWS::AutoScaling::AutoScalingGroup"
+    Properties:
+      DesiredCapacity: !Ref NodeAutoScalingGroupDesiredCapacity
+      LaunchTemplate:
+        LaunchTemplateId: !Ref NodeLaunchTemplate
+        Version: !GetAtt NodeLaunchTemplate.LatestVersionNumber
+      MaxSize: !Ref NodeAutoScalingGroupMaxSize
+      MinSize: !Ref NodeAutoScalingGroupMinSize
+      Tags:
+        - Key: Name
+          PropagateAtLaunch: true
+          Value: !Sub ${ClusterName}-${NodeGroupName}-Node
+        - Key: !Sub kubernetes.io/cluster/${ClusterName}
+          PropagateAtLaunch: true
+          Value: owned
+      VPCZoneIdentifier: [ !Ref SubnetId ]
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MaxBatchSize: 1
+        MinInstancesInService: !Ref NodeAutoScalingGroupDesiredCapacity
+        PauseTime: PT5M
+
 Outputs:
-  EKSClusterName:
-    Description: EKS Cluster
-    Value: !Ref ClusterName
-
-  NodeGroupName:
-    Description: Name of NodeGroup
-    Value: !Ref NodeGroupName
-
   NodeInstanceRole:
     Description: The node instance role
     Value: !GetAtt NodeInstanceRole.Arn
 
-  SubnetID:
-    Description: Subnet of the NodeGroup
-    Value: !Ref SubnetId
-
-  LaunchTemplateID:
-    Description: The launch template created
-    Value: !Ref NodeLaunchTemplate
-
-
-
+  NodeAutoScalingGroup:
+    Description: The autoscaling group
+    Value: !Ref NodeGroup

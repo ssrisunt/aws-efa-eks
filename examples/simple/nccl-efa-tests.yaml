@@ -67,7 +67,7 @@ spec:
             - --oversubscribe
             - /opt/nccl-tests/build/all_reduce_perf
             - -b
-            - "8"
+            - "4"
             - -e
             - 2G
             - -f
@@ -89,7 +89,7 @@ spec:
             emptyDir:
               medium: Memory
           nodeSelector:
-            beta.kubernetes.io/instance-type: p4d.24xlarge
+            beta.kubernetes.io/instance-type: g4dn.12xlarge
           containers:
           - image: public.ecr.aws/w6p6i9i7/aws-efa-nccl-rdma:22.03-pt-py3
             imagePullPolicy: Always
